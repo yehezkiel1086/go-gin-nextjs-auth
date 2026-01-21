@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/adapter/config"
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/adapter/handler"
@@ -13,29 +14,31 @@ import (
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/service"
 )
 
+func handleError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %v", msg, err)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	// load .env configs
 	conf, err := config.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("✅ .env configs loaded successfully")
+	handleError(err, "unable to load .env configs")
+	fmt.Println(".env configs loaded successfully")
 
 	// init context
 	ctx := context.Background()
 
 	// init db connection
 	db, err := postgres.New(ctx, conf.DB)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("✅ DB connection established successfully")
+	handleError(err, "unable to connect with postgres db")
+	fmt.Println("DB connection established successfully")
 
 	// migrate dbs
-	if err := db.Migrate(&domain.User{}, &domain.Job{}); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("✅ DB migrated successfully")
+	err = db.Migrate(&domain.User{}, &domain.Job{})
+	handleError(err, "db migration failed")
+	fmt.Println("DB migrated successfully")
 
 	// dependency injections
 	userRepo := repository.NewUserRepository(db)
@@ -52,6 +55,7 @@ func main() {
 	// init router
 	r := handler.NewRouter(
 		conf.HTTP,
+		conf.JWT,
 		userHandler,
 		authHandler,
 		jobHandler,

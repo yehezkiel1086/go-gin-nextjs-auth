@@ -12,10 +12,13 @@ import (
 
 type Router struct {
 	r *gin.Engine
+	httpConf *config.HTTP
+	jwtConf *config.JWT
 }
 
 func NewRouter(
-	conf *config.HTTP,
+	httpConf *config.HTTP,
+	jwtConf *config.JWT,
 	userHandler *UserHandler,
 	authHandler *AuthHandler,
 	jobHandler *JobHandler,
@@ -24,7 +27,7 @@ func NewRouter(
 	r := gin.New()
 
 	// define allowed origins array of string
-	allowedOrigins := strings.Split(conf.AllowedOrigins, ",")
+	allowedOrigins := strings.Split(httpConf.AllowedOrigins, ",")
 
 	// cors config
 	corsConf := cors.New(cors.Config{
@@ -38,12 +41,13 @@ func NewRouter(
 
 	// group routes
 	pb := r.Group("/api/v1")
-	us := pb.Group("/", AuthMiddleware(), RoleMiddleware(domain.UserRole, domain.AdminRole))
-	ad := pb.Group("/", AuthMiddleware(), RoleMiddleware(domain.AdminRole))
+	us := pb.Group("/", AuthMiddleware(jwtConf), RoleMiddleware(domain.UserRole, domain.AdminRole))
+	ad := pb.Group("/", AuthMiddleware(jwtConf), RoleMiddleware(domain.AdminRole))
 
 	// public user and auth routes
 	pb.POST("/login", authHandler.Login)
 	pb.POST("/register", userHandler.RegisterUser)
+	pb.GET("/refresh", authHandler.Refresh)
 
 	// admin user routes
 	ad.GET("/users", userHandler.GetUsers)
@@ -56,7 +60,11 @@ func NewRouter(
 	ad.POST("/jobs", jobHandler.CreateJob)
 	ad.DELETE("/jobs/:id", jobHandler.DeleteJob)
 
-	return &Router{r}
+	return &Router{
+		r,
+		httpConf,
+		jwtConf,
+	}
 }
 
 func (r *Router) Serve(conf *config.HTTP) error {

@@ -2,17 +2,17 @@ package handler
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/adapter/config"
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/domain"
+	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/util"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(conf *config.JWT) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString, err := c.Cookie("jwt_token")
+		tokenString, err := c.Cookie("access_token")
 		if err != nil {
 			// fallback: check Authorization header
 			authHeader := c.GetHeader("Authorization")
@@ -28,24 +28,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// parse token
-		secret := os.Getenv("JWT_SECRET")
-		token, err := jwt.ParseWithClaims(tokenString, &domain.JWTClaims{}, func(token *jwt.Token) (any, error) {
-			return []byte(secret), nil
-		})
-
-		if err != nil || !token.Valid {
+		claims, err := util.ParseToken(tokenString, []byte(conf.AccessToken))
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "invalid or expired token",
-			})
-			c.Abort()
-			return
-		}
-
-		// extract claims
-		claims, ok := token.Claims.(*domain.JWTClaims)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid token claims",
 			})
 			c.Abort()
 			return
