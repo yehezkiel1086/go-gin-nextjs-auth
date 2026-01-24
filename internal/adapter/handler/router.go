@@ -48,6 +48,7 @@ func NewRouter(
 	pb.POST("/login", authHandler.Login)
 	pb.POST("/register", userHandler.RegisterUser)
 	pb.GET("/refresh", authHandler.Refresh)
+	pb.GET("/logout", authHandler.Logout)
 
 	// admin user routes
 	ad.GET("/users", userHandler.GetUsers)

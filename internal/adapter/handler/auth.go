@@ -79,14 +79,18 @@ func (ah *AuthHandler) Refresh(c *gin.Context) {
 	// get refresh token
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, domain.ErrUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": domain.ErrUnauthorized.Error(),
+		})
 		return
 	}
 
 	// get claims from refresh token
 	claims, err := util.ParseToken(refreshToken, []byte(ah.conf.RefreshToken))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, domain.ErrUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": domain.ErrUnauthorized.Error(),
+		})
 		return
 	}
 
@@ -95,7 +99,9 @@ func (ah *AuthHandler) Refresh(c *gin.Context) {
 
 	user, err := ah.svc.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, domain.ErrUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": domain.ErrUnauthorized.Error(),
+		})
 		return
 	}
 
@@ -104,7 +110,9 @@ func (ah *AuthHandler) Refresh(c *gin.Context) {
 
 	accessTokenDuration, err := strconv.Atoi(ah.conf.AccessTokenDuration)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, domain.ErrUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": domain.ErrUnauthorized.Error(),
+		})
 		return
 	}
 
@@ -113,5 +121,14 @@ func (ah *AuthHandler) Refresh(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": newAccessToken,
+	})
+}
+
+func (ah *AuthHandler) Logout(c *gin.Context) {
+	c.SetCookie("access_token", "", -1, "/", "", false, true)
+	c.SetCookie("refresh_token", "", -1, "/api/v1/refresh", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "user logged out successfully",
 	})
 }
