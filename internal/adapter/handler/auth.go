@@ -9,7 +9,6 @@ import (
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/adapter/config"
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/domain"
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/port"
-	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/util"
 )
 
 type AuthHandler struct {
@@ -60,7 +59,6 @@ func (ah *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// set jwt token in cookie
-	// c.SetCookie("access_token", accessToken, accessTokenDuration * 60, "/", "", false, true)
 	c.SetCookie("access_token", accessToken, accessTokenDuration, "/", "", false, true)
 
 	c.SetCookie("refresh_token", refreshToken, refreshTokenDuration * 24 * 60 * 60, "/api/v1/refresh", "", false, true)
@@ -76,7 +74,6 @@ type RefreshReq struct {
 }
 
 func (ah *AuthHandler) Refresh(c *gin.Context) {
-	// get refresh token
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -85,42 +82,27 @@ func (ah *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	// get claims from refresh token
-	claims, err := util.ParseToken(refreshToken, []byte(ah.conf.RefreshToken))
+	accessToken, err := ah.svc.Refresh(c, refreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": domain.ErrUnauthorized.Error(),
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": domain.ErrInternal.Error(),
 		})
 		return
 	}
 
-	// get user from email claims
-	email := claims.Email
-
-	user, err := ah.svc.GetUserByEmail(c.Request.Context(), email)
+	// set new access token to cookie
+	duration, err := strconv.Atoi(ah.conf.AccessTokenDuration)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": domain.ErrUnauthorized.Error(),
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": domain.ErrInternal.Error(),
 		})
 		return
 	}
 
-	// generate access token
-	newAccessToken, err := util.GenerateAccessToken(ah.conf, user)
-
-	accessTokenDuration, err := strconv.Atoi(ah.conf.AccessTokenDuration)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": domain.ErrUnauthorized.Error(),
-		})
-		return
-	}
-
-	// c.SetCookie("access_token", newAccessToken, accessTokenDuration * 60, "/", "", false, true)
-	c.SetCookie("access_token", newAccessToken, accessTokenDuration, "/", "", false, true)
+	c.SetCookie("access_token", accessToken, duration, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"access_token": newAccessToken,
+		"access_token": accessToken,
 	})
 }
 

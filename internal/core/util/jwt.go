@@ -10,48 +10,32 @@ import (
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/domain"
 )
 
-func GenerateAccessToken(conf *config.JWT, user *domain.User) (string, error) {
-	mySigningKey := []byte(conf.AccessToken)
+func GenerateToken(conf *config.JWT, user *domain.User, tokenType string) (string, error) {
+	var mySigningKey []byte
+	var expiry *jwt.NumericDate
 
-	// convert duration to int
-	duration, err := strconv.Atoi(conf.AccessTokenDuration)
-	if err != nil {
-		return "", err
+	switch tokenType {
+		case "access":
+			mySigningKey = []byte(conf.AccessToken)
+			duration, err := strconv.Atoi(conf.AccessTokenDuration)
+			if err != nil {
+				return "", err
+			}
+			expiry = jwt.NewNumericDate(time.Now().Add(time.Duration(duration) * time.Second))
+		case "refresh":
+			mySigningKey = []byte(conf.RefreshToken)
+			duration, err := strconv.Atoi(conf.RefreshTokenDuration)
+			if err != nil {
+				return "", err
+			}
+			expiry = jwt.NewNumericDate(time.Now().Add(time.Duration(duration) * time.Hour * 24))
 	}
 
-	// Create claims with multiple fields populated
 	claims := domain.JWTClaims{
 		Email: user.Email,
 		Role:  user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(duration) * time.Second)),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, err := token.SignedString(mySigningKey)
-	if err != nil {
-		return "", err
-	}
-
-	return ss, nil
-}
-
-func GenerateRefreshToken(conf *config.JWT, user *domain.User) (string, error) {
-	mySigningKey := []byte(conf.RefreshToken)
-
-	// convert duration to int
-	duration, err := strconv.Atoi(conf.RefreshTokenDuration)
-	if err != nil {
-		return "", err
-	}
-
-	// Create claims with multiple fields populated
-	claims := domain.JWTClaims{
-		Email: user.Email,
-		Role:  user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(duration) * time.Hour * 24)),
+			ExpiresAt: expiry,
 		},
 	}
 
