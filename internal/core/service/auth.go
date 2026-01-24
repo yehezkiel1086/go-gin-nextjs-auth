@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/adapter/config"
 	"github.com/yehezkiel1086/go-gin-nextjs-auth/internal/core/port"
@@ -30,6 +31,10 @@ func (as *AuthService) Login(ctx context.Context, email, password string) (strin
 	user, err := as.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", "", err
+	}
+
+	if !user.IsVerified {
+		return "", "", errors.New("user is not verified")
 	}
 
 	if err := util.CompareHashedPwd(user.Password, password); err != nil {

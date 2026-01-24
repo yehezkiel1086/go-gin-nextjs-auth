@@ -29,6 +29,13 @@ func GenerateToken(conf *config.JWT, user *domain.User, tokenType string) (strin
 				return "", err
 			}
 			expiry = jwt.NewNumericDate(time.Now().Add(time.Duration(duration) * time.Hour * 24))
+		case "email":
+			mySigningKey = []byte(conf.EmailToken)
+			duration, err := strconv.Atoi(conf.EmailTokenDuration)
+			if err != nil {
+				return "", err
+			}
+			expiry = jwt.NewNumericDate(time.Now().Add(time.Duration(duration) * time.Minute))
 	}
 
 	claims := domain.JWTClaims{

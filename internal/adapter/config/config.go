@@ -24,6 +24,8 @@ type (
 		Host           string
 		Port           string
 		AllowedOrigins string
+		Email string
+		EmailPassword string
 	}
 
 	DB struct {
@@ -37,8 +39,10 @@ type (
 	JWT struct {
 		AccessToken   string
 		RefreshToken string
+		EmailToken string
 		AccessTokenDuration string
 		RefreshTokenDuration string
+		EmailTokenDuration string
 	}
 )
 
@@ -60,6 +64,8 @@ func New() (*Container, error) {
 		Host:           os.Getenv("HTTP_HOST"),
 		Port:           os.Getenv("HTTP_PORT"),
 		AllowedOrigins: os.Getenv("HTTP_ALLOWED_ORIGINS"),
+		Email: os.Getenv("HTTP_EMAIL"),
+		EmailPassword: os.Getenv("HTTP_EMAIL_PASSWORD"),
 	}
 
 	DB := &DB{
@@ -73,8 +79,10 @@ func New() (*Container, error) {
 	JWT := &JWT{
 		AccessToken:   os.Getenv("ACCESS_TOKEN"),
 		RefreshToken:   os.Getenv("REFRESH_TOKEN"),
+		EmailToken: os.Getenv("EMAIL_TOKEN"),
 		AccessTokenDuration: os.Getenv("ACCESS_TOKEN_DURATION"),
 		RefreshTokenDuration: os.Getenv("REFRESH_TOKEN_DURATION"),
+		EmailTokenDuration: os.Getenv("EMAIL_TOKEN_DURATION"),
 	}
 
 	return &Container{

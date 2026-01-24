@@ -46,7 +46,10 @@ func NewRouter(
 
 	// public user and auth routes
 	pb.POST("/login", authHandler.Login)
+
 	pb.POST("/register", userHandler.RegisterUser)
+	pb.GET("/confirm", userHandler.ConfirmEmail)
+
 	pb.GET("/refresh", authHandler.Refresh)
 	pb.GET("/logout", authHandler.Logout)
 

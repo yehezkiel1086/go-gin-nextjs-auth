@@ -41,6 +41,16 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*do
 	return user, nil
 }
 
+func (ur *UserRepository) UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	db := ur.db.GetDB()
+
+	if err := db.WithContext(ctx).Save(user).Error; err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (ur *UserRepository) GetUsers(ctx context.Context) ([]domain.UserResponse, error) {
 	db := ur.db.GetDB()
 

@@ -53,3 +53,24 @@ func (uh *UserHandler) GetUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, users)
 }
+
+func (uh *UserHandler) ConfirmEmail(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "token is required",
+		})
+		return
+	}
+
+	if err := uh.svc.ConfirmEmail(c.Request.Context(), token); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": domain.ErrInternal,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "email verified successfully",
+	})
+}

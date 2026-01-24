@@ -41,7 +41,7 @@ func main() {
 
 	// dependency injections
 	userRepo := repository.NewUserRepository(db)
-	userSvc := service.NewUserService(userRepo)
+	userSvc := service.NewUserService(conf.HTTP, conf.JWT, userRepo)
 	userHandler := handler.NewUserHandler(userSvc)
 
 	authSvc := service.NewAuthService(conf.JWT, userRepo)
