@@ -1,11 +1,11 @@
 import { LoginForm } from "@/components/LoginForm";
 
-const HomePage = () => {
+const LoginPage = () => {
   return (
     <div className="flex items-center justify-center h-screen">
-      <LoginForm />
+        <LoginForm />
     </div>
   )
 }
 
-export default HomePage
+export default LoginPage
