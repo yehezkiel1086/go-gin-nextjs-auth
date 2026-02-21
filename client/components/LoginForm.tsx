@@ -13,10 +13,16 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { login, type LoginRequest } from "@/lib/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+type LoginRequest = {
+  email: string;
+  password: string;
+}
 
 export function LoginForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState<LoginRequest>({
     email: "",
     password: "",
@@ -50,13 +56,24 @@ export function LoginForm() {
     setError("");
 
     try {
-      const response = await login(formData);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URI}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      console.log(response);
-      
-      // if (response) {
-      //   window.location.href = "/";
-      // }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      router.push("/jobs/create");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed. Please try again.");
     } finally {
